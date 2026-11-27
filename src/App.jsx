@@ -1,6 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
 
+// 本地开发走 Vite 中间件；部署后填 CloudBase 云函数的 HTTP 访问地址。
+const AI_API_URL = import.meta.env.VITE_AI_API_URL || '/api/generate-cards'
+
 const INITIAL_TEMPLATES = [
   {
     id: 'tpl-concept',
@@ -792,7 +795,7 @@ export default function App() {
 
     setLoading(true)
     try {
-      const response = await fetch(`${import.meta.env.BASE_URL}api/generate-cards`, {
+      const response = await fetch(AI_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sources, template: selectedTemplate }),
@@ -815,8 +818,8 @@ export default function App() {
         aiFallback: true,
       }))
       setCards((prev) => [...prev, ...generated])
-      if (import.meta.env.PROD) {
-        showNotice('当前为 GitHub Pages 静态站点，AI 接口不可用，已用模拟数据生成；本地运行可启用 AI 能力')
+      if (import.meta.env.PROD && !import.meta.env.VITE_AI_API_URL) {
+        showNotice('未配置 VITE_AI_API_URL，已用模拟数据生成；本地运行或配置云函数地址可启用 AI')
       } else if (error.code === 'NO_API_KEY') {
         showNotice('未配置 API Key，已用模拟数据生成。请在 .env.local 填写 Key')
       } else {
